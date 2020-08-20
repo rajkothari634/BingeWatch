@@ -10,6 +10,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "fetch": "^1.1.0",
+    "http": "^0.0.1-security",
     "react": "16.13.1",
     "react-native": "0.63.2",
     "react-native-vector-icons": "^7.0.0",
