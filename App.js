@@ -1,12 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-/////////////////
-
 import React, {memo, useRef, useState, useEffect} from 'react';
 import {
   View,
@@ -18,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import VideoCard from './component/videocard';
+import Header from './component/header';
 import {
   RecyclerListView,
   DataProvider,
@@ -32,11 +24,12 @@ const ViewTypes = {
 
 let containerCount = 0;
 
-const pageSize = 4;
+//const pageSize = 4;
 
 let {width, height} = Dimensions.get('window');
 
-const ListView = memo(() => {
+const App = memo(() => {
+  const [pageSize, setPageSize] = useState(5);
   const [data, setData] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,8 +45,10 @@ const ListView = memo(() => {
       if (more) setIsLoadingMore(!!more);
       else setIsLoading(true);
 
-      const resData = await fake(data);
-      setData(resData);
+      //const resData = await fake(data);
+      setData(data);
+      console.log(pageSize);
+      setPageSize(pageSize + 1);
     } catch (e) {
       console.log(e);
     } finally {
@@ -67,13 +62,68 @@ const ListView = memo(() => {
     }
   };
 
-  const loadMore = () => {
+  const loadMore = async () => {
     console.log('end');
-    load([...data, ...generateArray(pageSize)], true);
+    // const videoUrlData = await fetch
+    async function fetchMyData() {
+      //let result = await generateArray(pageSize);
+      console.log('fetchmydata without check is called');
+      const result = await fetch(
+        'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            page: pageSize,
+          }),
+        },
+      ).then((res) => {
+        if (res) {
+          return res.json();
+        } else {
+          console.log('error in fetching');
+          return ['sdsdsd'];
+        }
+      });
+      console.log(result);
+      load([...data, ...result], true);
+    }
+    fetchMyData(1);
+    //load([...data, ...generateArray(pageSize)], true);
   };
 
   const refresh = async () => {
-    load(generateArray(pageSize));
+    async function fetchMyData() {
+      //let result = await generateArray(pageSize);
+      console.log('fetchmydata without check is called');
+      const result = await fetch(
+        'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            page: pageSize,
+          }),
+        },
+      ).then((res) => {
+        if (res) {
+          return res.json();
+        } else {
+          console.log('error in fetching');
+          return ['sdsdsd'];
+        }
+      });
+      console.log(result);
+      load(result);
+    }
+    fetchMyData(0);
+    //load(generateArray(pageSize));
   };
 
   useEffect(() => {
@@ -81,8 +131,33 @@ const ListView = memo(() => {
       // listView?.scrollTo({y: 300, animated: true});
     }, 5000);
 
-    load(generateArray(pageSize));
-
+    async function fetchMyData() {
+      //let result = await generateArray(pageSize);
+      console.log('fetchmydata without check is called');
+      const result = await fetch(
+        'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            page: pageSize,
+          }),
+        },
+      ).then((res) => {
+        if (res) {
+          return res.json();
+        } else {
+          console.log('error in fetching');
+          return ['sdsdsd'];
+        }
+      });
+      console.log(result);
+      load(result);
+    }
+    fetchMyData(0);
     return () => {
       clearTimeout(timeout);
     };
@@ -104,9 +179,9 @@ const ListView = memo(() => {
 
   return (
     <View style={{flex: 1}}>
-      <Button title="Refresh" onPress={() => refresh()} />
+      <Header />
       <RecyclerListView
-        style={{flex: 1}}
+        style={{flex: 1, marginTop: 50}}
         ref={listView}
         scrollViewProps={{
           refreshControl: (
@@ -119,17 +194,14 @@ const ListView = memo(() => {
         renderFooter={() => <RenderFooter loading={isLoadingMore} />}
         onEndReached={() => loadMore()}
         onEndReachedThreshold={1}
-        externalScrollView={ExternalScrollView}
         layoutProvider={_layoutProvider}
         dataProvider={dataProvider}
         rowRenderer={rowRenderer}
       />
-
-      <Button title="Load More" onPress={() => loadMore()} />
     </View>
   );
 });
-
+// externalScrollView={ExternalScrollView}
 const layoutMaker = () =>
   new LayoutProvider(
     (index) => {
@@ -151,6 +223,8 @@ const layoutMaker = () =>
   );
 
 const rowRenderer = (type, data) => {
+  console.log('checking in row render');
+  console.log(data);
   switch (type) {
     case ViewTypes.NORMAL:
       return <VideoCard />;
@@ -170,32 +244,60 @@ const RenderFooter = ({loading}) =>
 const dataProviderMaker = (data) =>
   new DataProvider((r1, r2) => r1 !== r2).cloneWithRows(data);
 
-const generateArray = (n) => {
-  let arr = new Array(n);
-  for (let i = 0; i < n; i++) {
-    arr[i] = i;
-  }
-  return arr;
-};
+export default App;
 
-class ExternalScrollView extends BaseScrollView {
-  scrollTo(...args) {
-    if (this._scrollViewRef) {
-      this._scrollViewRef.scrollTo(...args);
-    }
-  }
+// async function fetchMyData(check) {
+//   //let result = await generateArray(pageSize);
+//   const result = await fetch(
+//     'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
+//     {
+//       method: 'POST',
+//       headers: {
+//         Accept: 'application/json',
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({
+//         page: pageSize,
+//       }),
+//     },
+//   ).then((res) => {
+//     if (res) {
+//       return res.json();
+//     } else {
+//       console.log('error in fetching');
+//       return ['sdsdsd'];
+//     }
+//   });
+//   console.log(result);
+//   if (check == 1) {
+//     load([...data, ...result], true);
+//   } else {
+//     load(result);
+//   }
+// }
 
-  render() {
-    return (
-      <ScrollView
-        {...this.props}
-        ref={(scrollView) => {
-          this._scrollViewRef = scrollView;
-        }}
-      />
-    );
-  }
-}
+// const generateArray = (n) => {
+
+// };
+
+// class ExternalScrollView extends BaseScrollView {
+//   scrollTo(...args) {
+//     if (this._scrollViewRef) {
+//       this._scrollViewRef.scrollTo(...args);
+//     }
+//   }
+
+//   render() {
+//     return (
+//       <ScrollView
+//         {...this.props}
+//         ref={(scrollView) => {
+//           this._scrollViewRef = scrollView;
+//         }}
+//       />
+//     );
+//   }
+// }
 
 // class CellContainer extends React.Component {
 //   constructor(args) {
@@ -211,29 +313,6 @@ class ExternalScrollView extends BaseScrollView {
 //     );
 //   }
 // }
-
-const fake = (data) => {
-  return new Promise(function (resolve, reject) {
-    try {
-      setTimeout(() => {
-        resolve(data);
-      }, 3000);
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
-
-export default ListView;
-
-const styles = {
-  container: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    flex: 1,
-    backgroundColor: 'orange',
-  },
-};
 
 ////////////////
 
