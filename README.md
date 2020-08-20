@@ -1,0 +1,2 @@
+# BingeWatch
+React Native  Application
