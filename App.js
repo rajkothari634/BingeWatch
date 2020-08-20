@@ -7,6 +7,7 @@ import {
   Button,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import VideoCard from './component/videocard';
 import Header from './component/header';
@@ -16,7 +17,8 @@ import {
   LayoutProvider,
   BaseScrollView,
 } from 'recyclerlistview'; // Version can be specified in package.json
-
+import styled from 'styled-components';
+import VideoPlayer from 'react-native-video-player';
 const ViewTypes = {
   LOADING: 0,
   NORMAL: 1,
@@ -26,10 +28,25 @@ let containerCount = 0;
 
 //const pageSize = 4;
 
+const Container = styled.View`
+  flex: 1;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
+  background-color: #e6b522;
+  border-radius: 10px;
+`;
+const Title = styled.Text`
+  font-size: 20px;
+  font-weight: 500;
+  color: #ffffff;
+`;
+
 let {width, height} = Dimensions.get('window');
 
 const App = memo(() => {
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(0);
   const [data, setData] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +62,6 @@ const App = memo(() => {
       if (more) setIsLoadingMore(!!more);
       else setIsLoading(true);
 
-      //const resData = await fake(data);
       setData(data);
       console.log(pageSize);
       setPageSize(pageSize + 1);
@@ -68,7 +84,7 @@ const App = memo(() => {
     async function fetchMyData() {
       //let result = await generateArray(pageSize);
       console.log('fetchmydata without check is called');
-      const result = await fetch(
+      let result = await fetch(
         'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
         {
           method: 'POST',
@@ -85,21 +101,32 @@ const App = memo(() => {
           return res.json();
         } else {
           console.log('error in fetching');
-          return ['sdsdsd'];
+          return null;
         }
       });
-      console.log(result);
+      result = processResult(result);
       load([...data, ...result], true);
     }
     fetchMyData(1);
     //load([...data, ...generateArray(pageSize)], true);
   };
 
+  const checkdata = () => {
+    console.warn(data);
+  };
+
+  function processResult(result) {
+    for (var i = 0; i < result.length; i++) {
+      result[i].id = data.length + i;
+    }
+    return result;
+  }
+
   const refresh = async () => {
     async function fetchMyData() {
       //let result = await generateArray(pageSize);
       console.log('fetchmydata without check is called');
-      const result = await fetch(
+      let result = await fetch(
         'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
         {
           method: 'POST',
@@ -116,10 +143,11 @@ const App = memo(() => {
           return res.json();
         } else {
           console.log('error in fetching');
-          return ['sdsdsd'];
+          return null;
         }
       });
-      console.log(result);
+      //result = processResult(result);
+      //setPageSize(0);
       load(result);
     }
     fetchMyData(0);
@@ -134,7 +162,7 @@ const App = memo(() => {
     async function fetchMyData() {
       //let result = await generateArray(pageSize);
       console.log('fetchmydata without check is called');
-      const result = await fetch(
+      let result = await fetch(
         'https://europe-west1-boom-dev-7ad08.cloudfunctions.net/videoFeed',
         {
           method: 'POST',
@@ -154,7 +182,7 @@ const App = memo(() => {
           return ['sdsdsd'];
         }
       });
-      console.log(result);
+      //result = processResult(result);
       load(result);
     }
     fetchMyData(0);
@@ -180,6 +208,7 @@ const App = memo(() => {
   return (
     <View style={{flex: 1}}>
       <Header />
+      <Button title="Refresh" onPress={() => console.log(data)} />
       <RecyclerListView
         style={{flex: 1, marginTop: 50}}
         ref={listView}
@@ -223,11 +252,22 @@ const layoutMaker = () =>
   );
 
 const rowRenderer = (type, data) => {
-  console.log('checking in row render');
-  console.log(data);
   switch (type) {
     case ViewTypes.NORMAL:
-      return <VideoCard />;
+      return (
+        <>
+          <Container>
+            <VideoPlayer
+              style={{marginTop: 20}}
+              video={{
+                uri: data.playbackUrl,
+              }}
+              videoWidth={width - 50}
+              videoHeight={height - 200}
+            />
+          </Container>
+        </>
+      );
     default:
       return null;
   }
