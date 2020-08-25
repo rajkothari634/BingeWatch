@@ -18,7 +18,8 @@
     "react-native-video": "^5.1.0-alpha7",
     "react-native-video-player": "^0.10.1",
     "recyclerlistview": "^3.0.0",
-    "styled-components": "^5.1.1"
+    "styled-components": "^5.1.1",
+    "video-react": "^0.14.1"
   },
   "devDependencies": {
     "@babel/core": "^7.11.1",
