@@ -27,6 +27,8 @@ const Container = styled.View`
 let {width, height} = Dimensions.get('window');
 const VideoRecycler = memo(() => {
   const [pageSize, setPageSize] = useState(0);
+  const [activeNumber, setActiveNumber] = useState(0);
+  const [player, setPlayer] = useState([]);
   const [data, setData] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +38,30 @@ const VideoRecycler = memo(() => {
   const _layoutProvider = useRef(layoutMaker()).current;
 
   const listView = useRef();
+
+  const rowRenderer = (type, singledata) => {
+    return (
+      <>
+        <Container>
+          <VideoPlayer
+            style={{marginTop: 20}}
+            video={{
+              uri: singledata.playbackUrl,
+            }}
+            ref={(r) => {
+              console.log('player inserting');
+              console.log(r);
+              console.log(' ' + player[0]);
+              setPlayer([...player, r]);
+            }}
+            pauseOnPress={true}
+            videoWidth={width - 50}
+            videoHeight={height - 200}
+          />
+        </Container>
+      </>
+    );
+  };
 
   const load = async (data, more = false) => {
     try {
@@ -99,6 +125,8 @@ const VideoRecycler = memo(() => {
     }
   }
 
+  useEffect(() => {}, [activeNumber]);
+
   useEffect(() => {
     setDataProvider(dataProviderMaker(data));
   }, [data]);
@@ -129,6 +157,20 @@ const VideoRecycler = memo(() => {
         renderFooter={() => <RenderFooter loading={isLoadingMore} />}
         onEndReached={() => loadMore()}
         onEndReachedThreshold={1}
+        onVisibleIndicesChanged={(number) => {
+          if (player.length > 1) {
+            console.log('player identification');
+            console.log(number[number.length - 2]);
+            console.log(player.length);
+            console.log(player[number[number.length - 2]]);
+            player[number[number.length - 2]].resume();
+            if (activeNumber != number[number.length - 2]) {
+              player[activeNumber].pause();
+              player[number[number.length - 2]].resume();
+              setActiveNumber(number[number.length - 2]);
+            }
+          }
+        }}
         layoutProvider={_layoutProvider}
         dataProvider={dataProvider}
         rowRenderer={rowRenderer}
@@ -146,25 +188,6 @@ const layoutMaker = () =>
       dim.height = height - 70;
     },
   );
-
-//return type will bw only use of viewtype.normal
-const rowRenderer = (type, singledata) => {
-  return (
-    <>
-      <Container>
-        <VideoPlayer
-          style={{marginTop: 20}}
-          video={{
-            uri: singledata.playbackUrl,
-          }}
-          pauseOnPress={true}
-          videoWidth={width - 50}
-          videoHeight={height - 200}
-        />
-      </Container>
-    </>
-  );
-};
 
 const RenderFooter = ({loading}) =>
   loading && (
